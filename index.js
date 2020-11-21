@@ -90,13 +90,16 @@ server.listen(8080, function() {
 
 function processCommand(cmd) {
     // Validate + execute command
+    let duration = 0;
     switch (cmd) {
     case CMD_LEFT:
     case CMD_RIGHT:
+	duration = 200;
     case CMD_FWD:
     case CMD_BACK:
-	console.log('executing command:', cmd);
-	executeCommand(cmd);
+	duration = (duration === 0) ? 1000 : duration;
+	console.log('executing command:', cmd, duration);
+	executeCommand(cmd, duration);
 	break;
     case CMD_TAKE_CONTROL:
 	// TODO: Anything to do here?
@@ -115,35 +118,35 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function executeCommand(cmd) {
+async function executeCommand(cmd, duration) {
     // TODO: Figure out event queueing so that we don't have multiple
     // commands trying to execute simultaneously.
     switch (cmd) {
     case CMD_LEFT:
 	rover.write(PIN_L_BACK, 1);
 	rover.write(PIN_R_FWD, 1);
-	await sleep(200);
+	await sleep(duration);
 	rover.write(PIN_L_BACK, 0);
 	rover.write(PIN_R_FWD, 0);
 	break;
     case CMD_RIGHT:
 	rover.write(PIN_L_FWD, 1);
 	rover.write(PIN_R_BACK, 1);
-	await sleep(200);
+	await sleep(duration);
 	rover.write(PIN_L_FWD, 0);
 	rover.write(PIN_R_BACK, 0);
 	break;
     case CMD_FWD:
 	rover.write(PIN_L_FWD, 1);
 	rover.write(PIN_R_FWD, 1);
-	await sleep(200);
+	await sleep(duration);
 	rover.write(PIN_L_FWD, 0);
 	rover.write(PIN_R_FWD, 0);
 	break;
     case CMD_BACK:
 	rover.write(PIN_L_BACK, 1);
 	rover.write(PIN_R_BACK, 1);
-	await sleep(200);
+	await sleep(duration);
 	rover.write(PIN_L_BACK, 0);
 	rover.write(PIN_R_BACK, 0);
 	break;

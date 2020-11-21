@@ -1,0 +1,15 @@
+{
+  "name": "pi-rover",
+  "version": "1.0.0",
+  "description": "Remote control for a Snap Circuits Rover",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Steve Magoun",
+  "license": "MIT",
+  "dependencies": {
+    "rpi-gpio": "^2.1.7",
+    "websocket": "^1.0.32"
+  }
+}

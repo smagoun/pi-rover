@@ -1,0 +1,26 @@
+<html>
+  <head>
+    <title>Remote Snap Rover</title>
+    <script type="text/javascript" src="rover-client.js"></script>
+  </head>
+    <body>
+    <div>
+      <p>Snap Rover remote control</p>
+    </div>
+    <div>
+      <div>
+	<button type="button" id="btn_connect" onclick="takeControl(location.hostname, location.port);">Take Control</button>
+	</div>
+      <div>
+	<fieldset id="ctl_buttons" disabled>
+	  <button type="button" id="ctl_left" class="ctl_button" onclick="buttonPress('left', this);">Left</button>
+	  <button type="button" id="ctl_right" class="ctl_button" onclick="buttonPress('right', this);">Right</button>
+	  <button type="button" id="ctl_fwd" class="ctl_button" onclick="buttonPress('forward', this);">Forward</button>
+	  <button type="button" id="ctl_back" class="ctl_button" onclick="buttonPress('back', this);">Back</button>
+	</fieldset>
+      </div>
+      <div>
+	<button type="button" id="btn_disconnect" onclick="cedeControl();" disabled>Give up Control</button>
+    </div>
+  </body>
+</html>

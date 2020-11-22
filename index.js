@@ -114,6 +114,17 @@ function processCommand(cmd) {
     }
 }
 
+/**
+ * Sleep for 'ms' millisconds
+ *
+ * @example
+ * async function foo() {
+ *   await sleep(100);
+ * }
+ *
+ * @param {number} ms
+ * @returns {Promise} Promise resolved after ms milliseconds.
+ */
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }

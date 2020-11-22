@@ -9,23 +9,22 @@ let client_id = 0;
 // Counter for messages we send
 let message_id = 0;
 
-function connect(host, port, callback) {
+// Error timeout, in ms
+const ERR_MSG_TIMEOUT = 3000;
+
+function connect(host, port, openCallback, closeCallback) {
     if (socket != null) {
 	if (socket.readyState != WebSocket.CLOSED) {
 	    socket.close();
 	    // TODO: Should only continue when we get the onclose event
-	    socket = null;
-	    message_id = 0;
 	}
     }
     // TOOD: Support wss too
     const url = `ws://${host}:${port}`;
     console.log(`connecting socket to ${url}`);
     socket = new WebSocket(url, 'rover-control');
-    socket.onopen = function() {
-	console.log(`socket opened`);
-	callback();
-    }
+    socket.onopen = openCallback;
+    socket.onclose = closeCallback;
 }
 
 // Send a command to the server
@@ -57,13 +56,48 @@ function buttonPress(cmd, element) {
     sendCommand(cmd);
 }
 
+function openCallback(evt) {
+    console.log('socket opened', evt);
+    enableElement('ctl_buttons');
+    disableElement('btn_connect');
+    enableElement('btn_disconnect');
+    sendCommand('take_control');
+}
+
+async function closeCallback(evt) {
+    console.log('socket closed', evt);
+    socket = null;
+    message_id = 0;
+    
+    disableElement('ctl_buttons');
+    disableElement('btn_disconnect');
+    enableElement('btn_connect');
+    
+    if (evt.code != 1000) {  // 1000 is 'Normal closure'. See WebSockets API: CloseEvent
+	msgs = document.getElementById('msgs');
+	msgs.innerText = 'The server closed the connection.';
+	await sleep(ERR_MSG_TIMEOUT);
+	msgs.innerText = '';
+    }
+}
+
+/**
+ * Sleep for 'ms' millisconds
+ *
+ * @example
+ * async function foo() {
+ *   await sleep(100);
+ * }
+ *
+ * @param {number} ms
+ * @returns {Promise} Promise resolved after ms milliseconds.
+ */
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function takeControl(host, port) {
-    connect(host, port, function (evt) {
-	enableElement('ctl_buttons');
-	disableElement('btn_connect');
-	enableElement('btn_disconnect');
-	sendCommand('take_control');
-    });
+    connect(host, port, openCallback, closeCallback);
 }
 
 function enableElement(id) {
@@ -77,11 +111,5 @@ function cedeControl() {
     if (socket != null) {
 	sendCommand('cede_control');
 	socket.close();
-	// TODO: Should only continue when we get the onclose event
-	socket = null;
-	message_id = 0;
     }
-    disableElement('ctl_buttons');
-    disableElement('btn_disconnect');
-    enableElement('btn_connect');
 }

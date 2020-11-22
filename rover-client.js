@@ -26,6 +26,7 @@ function connect(host, port, openCallback, closeCallback) {
     socket.onopen = openCallback;
     socket.onclose = closeCallback;
     socket.onmessage = messageCallback;
+    socket.onerror = errorCallback;
 }
 
 // Send a command to the server
@@ -78,25 +79,37 @@ function closeCallback(evt) {
     }
 }
 
-async function writeStatus(msg, timeout) {
-    msgs = document.getElementById('msgs');
-    msgs.innerText = msg;
-    await sleep(timeout);
-    msgs.innerText = '';
+function errorCallback(evt) {
+    console.log('socket error', evt);
+    socket = null;
+    message_id = 0;
+
+    disableElement('ctl_buttons');
+    disableElement('btn_disconnect');
+    enableElement('btn_connect');
+
+    writeStatus('Error communicating with rover', MSG_TIMEOUT);
 }
 
 function messageCallback(evt) {
     console.log('message from server', evt);
     if (evt.type === 'message') {
 	switch (evt.data) {
-	case protocol.CMD_BEGIN:
+	case protocol.CMD_BEGIN_CONTROL:
 	    enableElement('ctl_buttons');
-	    writeStatus('Time to go!', MSG_TIMEOUT);
+	    writeStatus('Time to drive!', MSG_TIMEOUT);
 	    break;
 	default:
 	    console.log('received unknown command from server', evt.data);
 	}
     }
+}
+
+async function writeStatus(msg, timeout) {
+    msgs = document.getElementById('msgs');
+    msgs.innerText = msg;
+    await sleep(timeout);
+    msgs.innerText = '';
 }
 
 /**
@@ -118,16 +131,16 @@ function requestControl(host, port) {
     connect(host, port, openCallback, closeCallback);
 }
 
-function enableElement(id) {
-    document.getElementById(id).disabled = false;
-}
-function disableElement(id) {
-    document.getElementById(id).disabled = true;
-}
-
 function cedeControl() {
     if (socket != null) {
 	sendCommand(protocol.CMD_CEDE_CONTROL);
 	socket.close();
     }
+}
+
+function enableElement(id) {
+    document.getElementById(id).disabled = false;
+}
+function disableElement(id) {
+    document.getElementById(id).disabled = true;
 }

@@ -1,6 +1,7 @@
 <html>
   <head>
     <title>Remote Snap Rover</title>
+    <script type="text/javascript" src="protocol.js"></script>
     <script type="text/javascript" src="rover-client.js"></script>
   </head>
     <body>
@@ -9,7 +10,7 @@
     </div>
     <div>
       <div>
-	<button type="button" id="btn_connect" onclick="takeControl(location.hostname, location.port);">Take Control</button>
+	<button type="button" id="btn_connect" onclick="requestControl(location.hostname, location.port);">Request Control</button>
 	</div>
       <div>
 	<fieldset id="ctl_buttons" disabled>

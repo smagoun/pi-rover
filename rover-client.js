@@ -9,8 +9,8 @@ let client_id = 0;
 // Counter for messages we send
 let message_id = 0;
 
-// Error timeout, in ms
-const ERR_MSG_TIMEOUT = 3000;
+// Message timeout, in ms
+const MSG_TIMEOUT = 3000;
 
 function connect(host, port, openCallback, closeCallback) {
     if (socket != null) {
@@ -19,12 +19,13 @@ function connect(host, port, openCallback, closeCallback) {
 	    // TODO: Should only continue when we get the onclose event
 	}
     }
-    // TOOD: Support wss too
+    // TODO: Support wss too
     const url = `ws://${host}:${port}`;
     console.log(`connecting socket to ${url}`);
-    socket = new WebSocket(url, 'rover-control');
+    socket = new WebSocket(url, protocol.PROTOCOL);
     socket.onopen = openCallback;
     socket.onclose = closeCallback;
+    socket.onmessage = messageCallback;
 }
 
 // Send a command to the server
@@ -58,13 +59,12 @@ function buttonPress(cmd, element) {
 
 function openCallback(evt) {
     console.log('socket opened', evt);
-    enableElement('ctl_buttons');
     disableElement('btn_connect');
     enableElement('btn_disconnect');
-    sendCommand('take_control');
+    sendCommand(protocol.CMD_REQUEST_CONTROL);
 }
 
-async function closeCallback(evt) {
+function closeCallback(evt) {
     console.log('socket closed', evt);
     socket = null;
     message_id = 0;
@@ -74,10 +74,28 @@ async function closeCallback(evt) {
     enableElement('btn_connect');
     
     if (evt.code != 1000) {  // 1000 is 'Normal closure'. See WebSockets API: CloseEvent
-	msgs = document.getElementById('msgs');
-	msgs.innerText = 'The server closed the connection.';
-	await sleep(ERR_MSG_TIMEOUT);
-	msgs.innerText = '';
+	writeStatus('The server closed the connection', MSG_TIMEOUT);
+    }
+}
+
+async function writeStatus(msg, timeout) {
+    msgs = document.getElementById('msgs');
+    msgs.innerText = msg;
+    await sleep(timeout);
+    msgs.innerText = '';
+}
+
+function messageCallback(evt) {
+    console.log('message from server', evt);
+    if (evt.type === 'message') {
+	switch (evt.data) {
+	case protocol.CMD_BEGIN:
+	    enableElement('ctl_buttons');
+	    writeStatus('Time to go!', MSG_TIMEOUT);
+	    break;
+	default:
+	    console.log('received unknown command from server', evt.data);
+	}
     }
 }
 
@@ -96,7 +114,7 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function takeControl(host, port) {
+function requestControl(host, port) {
     connect(host, port, openCallback, closeCallback);
 }
 
@@ -109,7 +127,7 @@ function disableElement(id) {
 
 function cedeControl() {
     if (socket != null) {
-	sendCommand('cede_control');
+	sendCommand(protocol.CMD_CEDE_CONTROL);
 	socket.close();
     }
 }

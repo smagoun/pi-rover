@@ -3,11 +3,12 @@
     <title>Remote Snap Rover</title>
     <script type="text/javascript" src="protocol.js"></script>
     <script type="text/javascript" src="rover-client.js"></script>
+    <meta name="viewport" content="width=device-width" />
     <style>
+      @media screen and (max-width: 480px) { body { text-align: center; } }
       fieldset { display: inline-block; }
-      button { margin: auto; }
+      #ctl_buttons button {font-size: 36px; font-weight: bold; margin: auto; }
       #ctl_fwd, #ctl_back { display: block; }
-      .arrow { font-size: 48px; margin: 20px; }
     </style>
   </head>
     <body>
@@ -20,10 +21,10 @@
 	</div>
       <div>
 	<fieldset id="ctl_buttons" disabled>
-	  <button type="button" id="ctl_fwd" class="ctl_button" onclick="buttonPress('forward', this);"><span class="arrow">&#x2191;</span></button>
-	  <button type="button" id="ctl_left" class="ctl_button" onclick="buttonPress('left', this);"><span class="arrow">&#x2190;</span></button>
-	  <button type="button" id="ctl_right" class="ctl_button" onclick="buttonPress('right', this);"><span class="arrow">&#x2192;</span></button>
-	  <button type="button" id="ctl_back" class="ctl_button" onclick="buttonPress('back', this);"><span class="arrow">&#x2193;</span></button>
+	  <button type="button" id="ctl_fwd" class="ctl_button" onclick="buttonPress('forward', this);">&#x2191;</button>
+	  <button type="button" id="ctl_left" class="ctl_button" onclick="buttonPress('left', this);">&#x2190;</button>
+	  <button type="button" id="ctl_right" class="ctl_button" onclick="buttonPress('right', this);">&#x2192;</button>
+	  <button type="button" id="ctl_back" class="ctl_button" onclick="buttonPress('back', this);">&#x2193;</button>
 	</fieldset>
       </div>
       <div>

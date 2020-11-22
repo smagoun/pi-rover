@@ -40,6 +40,9 @@ const VALID_URLS = {
     '/protocol.js': 'protocol.js',
 };
 
+/** List of valid origins for the WebSocket */
+let valid_origins = [];
+
 /** Queue of clients that want control of the rover */
 let control_queue = new Queue(function (next_client) {
     next_client.send(protocol.CMD_BEGIN_CONTROL);
@@ -223,6 +226,36 @@ function connectRover() {
 }
 
 /**
+ * Read and process environment variables
+ */
+function readEnv() {
+    const env = process.env.ORIGIN;
+    if (env) {
+	let origins = env.split(',');
+	valid_origins.push(...origins);
+    }
+    console.log('valid origins:', valid_origins);
+}
+
+/**
+ * Determine whether to accept request from the given origin.
+ *
+ * If valid_origins is populated, checks that origin is in valid_origins.
+ * 
+ * @param {String} origin Origin from the request
+ * @returns {boolean} true if it's OK to accept requests from this origin
+ */
+function validateOrigin(origin) {
+    if (origin === null || origin === "*"
+	|| (valid_origins.length > 0 && !valid_origins.includes(origin))) {
+
+	console.log('invalid origin', origin);
+	return false;
+    }
+    return true;
+}
+
+/**
  * Create the WebSocket server instance
  * 
  * @param {http.Server} httpServer http.Server instance
@@ -234,7 +267,16 @@ function createWsServer(httpServer) {
     });
     wsServer.on('request', function(req) {
 	console.log('Handling req from', req.origin);
-	// TODO: validate origin
+	if (!validateOrigin(req.origin)) {
+	    console.log('Client sent invalid origin', req.origin);
+	    req.reject(404, 'Invalid origin');
+	    return;
+	}
+	if (!req.requestedProtocols.includes(protocol.PROTOCOL)) {
+	    console.log("Client doesn't want to speak", protocol.PROTOCOL);
+	    req.reject(404, 'Protocol not supported');
+	    return;
+	}
 	let connection = req.accept(protocol.PROTOCOL, req.origin);
 	connection.on('message', onMessage);
 	connection.on('close', onClose);
@@ -300,6 +342,7 @@ function onClose(reason, description) {
  * Entry point
  */
 let main = function() {
+    readEnv();
     connectRover();
     const server = createHttpServer();
     createWsServer(server);

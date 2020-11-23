@@ -28,7 +28,7 @@ class Queue {
      */
     enqueue(item) {
 	this.array.push(item);
-	if (this.array.length === 1 && this.onNewHead !== null) {
+	if (this.array.length === 1 && this.onNewHead != undefined) {
 	    this.onNewHead(item);
 	}
     }
@@ -65,7 +65,7 @@ class Queue {
 	// Did the head of the queue change?
         if (index == 0 && this.array.length > 0) {
 	    let next = this.array[0];
-	    if (this.onNewHead !== null) {
+	    if (this.onNewHead != undefined) {
 		this.onNewHead(next);
 	    }
 	}

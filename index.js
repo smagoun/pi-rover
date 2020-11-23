@@ -9,15 +9,7 @@ const LISTEN_PORT = 8080;
 
 const protocol = require('./protocol.js');
 let Queue = require('./queue.js');
-
-const rover = require('rpi-gpio');
-
-const PIN_MODE   = rover.MODE_BCM;
-const PIN_L_FWD  = 17;
-const PIN_L_BACK = 18;
-const PIN_R_FWD  = 27;
-const PIN_R_BACK = 22;
-const PINS = [PIN_L_FWD, PIN_L_BACK, PIN_R_FWD, PIN_R_BACK];
+let Rover = require('./rover.js');
 
 /** Time (in ms) to run while turning */
 const DUR_TURN = 200;
@@ -47,6 +39,9 @@ let valid_origins = [];
 let control_queue = new Queue(function (next_client) {
     next_client.send(protocol.CMD_BEGIN_CONTROL);
 });
+
+/** Rover instance */
+let rover = null;
 
 /**
  * Read a file from disk, put it into the response, and send the response.
@@ -120,7 +115,6 @@ function createHttpServer() {
 function processCommand(conn, cmd) {
     // Validate + execute command
     let duration = 0;
-    console.log('protocol', protocol.CMD_REQUEST_CONTROL);
     switch (cmd) {
     case protocol.CMD_LEFT:
     case protocol.CMD_RIGHT:
@@ -129,7 +123,11 @@ function processCommand(conn, cmd) {
     case protocol.CMD_BACK:
 	duration = (duration === 0) ? DUR_MOVE : duration;
 	console.log('executing command:', cmd, duration);
-	executeCommand(cmd, duration);
+	try {
+	    rover.executeCommand(cmd, duration);
+	} catch (e) {
+	    console.log(e);
+	}
 	break;
     case protocol.CMD_CEDE_CONTROL:
 	// Give up control and notify the next in line
@@ -142,64 +140,6 @@ function processCommand(conn, cmd) {
 }
 
 /**
- * Sleep for 'ms' millisconds
- *
- * @example
- * async function foo() {
- *   await sleep(100);
- * }
- *
- * @param {number} ms
- * @returns {Promise} Promise resolved after ms milliseconds.
- */
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-/**
- * Sends a command to the rover
- *
- * @param {String} cmd One of the Protocol.CMD_* commands
- * @param {number} duration Duration of the command, in ms
- */
-async function executeCommand(cmd, duration) {
-    // TODO: Figure out event queueing so that we don't have multiple
-    // commands trying to execute simultaneously.
-    switch (cmd) {
-    case protocol.CMD_LEFT:
-	rover.write(PIN_L_BACK, 1);
-	rover.write(PIN_R_FWD, 1);
-	await sleep(duration);
-	rover.write(PIN_L_BACK, 0);
-	rover.write(PIN_R_FWD, 0);
-	break;
-    case protocol.CMD_RIGHT:
-	rover.write(PIN_L_FWD, 1);
-	rover.write(PIN_R_BACK, 1);
-	await sleep(duration);
-	rover.write(PIN_L_FWD, 0);
-	rover.write(PIN_R_BACK, 0);
-	break;
-    case protocol.CMD_FWD:
-	rover.write(PIN_L_FWD, 1);
-	rover.write(PIN_R_FWD, 1);
-	await sleep(duration);
-	rover.write(PIN_L_FWD, 0);
-	rover.write(PIN_R_FWD, 0);
-	break;
-    case protocol.CMD_BACK:
-	rover.write(PIN_L_BACK, 1);
-	rover.write(PIN_R_BACK, 1);
-	await sleep(duration);
-	rover.write(PIN_L_BACK, 0);
-	rover.write(PIN_R_BACK, 0);
-	break;
-    default:
-	console.log('Unknown command:', cmd);
-    }
-}
-
-/**
  * Callback for errors when communicating with the rover
  * 
  * @param {Error} error
@@ -208,21 +148,6 @@ function roverCallback(error) {
     if (error) {
 	console.log('Rover callback:', error);
     }
-}
-
-/**
- * Set up the GPIOs to talk to the rover
- */
-function connectRover() {
-    rover.setMode(PIN_MODE);
-    for (const pin of PINS) {
-	// This can sometimes thrown an 'EACCES: permission denied' error when opening
-	// one of the gpios in sysfs. Not clear why that is happening. A timeout between
-	// calls doesn't seem to help.
-	// TODO: Retry on error
-	rover.setup(pin, rover.DIR_OUT, roverCallback);
-    }
-    console.log('Rover connected');
 }
 
 /**
@@ -343,7 +268,7 @@ function onClose(reason, description) {
  */
 let main = function() {
     readEnv();
-    connectRover();
+    rover =  new Rover(roverCallback);
     const server = createHttpServer();
     createWsServer(server);
 }

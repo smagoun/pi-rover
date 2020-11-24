@@ -5,14 +5,14 @@
     <script type="text/javascript" src="rover-client.js"></script>
     <meta name="viewport" content="width=device-width" />
     <style>
-      @media screen and (max-width: 480px) { body { text-align: center; } }
+      @media screen and (max-width: 480px) { body { text-align: center; touch-action: manipulation; } }
       h1 { font-family: sans-serif; padding: 10px; color: whitesmoke; background-color: navy; }
       fieldset { display: inline-block; }
-      #ctl_buttons button {font-size: 36px; font-weight: bold; margin: auto; }
+      #ctl_buttons button {font-size: 36px; font-weight: bold; margin: auto; -webkit-user-select: none; }
       #ctl_fwd, #ctl_back { display: block; }
     </style>
   </head>
-    <body>
+    <body onload="bindListeners();">
     <div>
       <h1>Snap Rover remote control</h1>
     </div>
@@ -22,10 +22,10 @@
 	</div>
       <div>
 	<fieldset id="ctl_buttons" disabled>
-	  <button type="button" id="ctl_fwd" class="ctl_button" onclick="buttonPress('forward', this);">&#x2191;</button>
-	  <button type="button" id="ctl_left" class="ctl_button" onclick="buttonPress('left', this);">&#x2190;</button>
-	  <button type="button" id="ctl_right" class="ctl_button" onclick="buttonPress('right', this);">&#x2192;</button>
-	  <button type="button" id="ctl_back" class="ctl_button" onclick="buttonPress('back', this);">&#x2193;</button>
+	  <button type="button" id="ctl_fwd" class="ctl_button" value="forward">&#x2191;</button>
+	  <button type="button" id="ctl_left" class="ctl_button" value="left">&#x2190;</button>
+	  <button type="button" id="ctl_right" class="ctl_button" value="right">&#x2192;</button>
+	  <button type="button" id="ctl_back" class="ctl_button" value="back">&#x2193;</button>
 	</fieldset>
       </div>
       <div>

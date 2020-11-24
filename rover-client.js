@@ -6,8 +6,18 @@ let socket = null;
 // Counter for messages we send
 let message_id = 0;
 
-// Message timeout, in ms
-const MSG_TIMEOUT = 3000;
+/** Length of time to display a status message to the user, in ms */
+const STATUS_MSG_TIMEOUT = 3000;
+
+/**
+ * Time in ms between messages we send to the server. Should be coordinated with the
+ *  DUR_* variables in index.js to avoid spamming the rover with commands.
+ */
+const SEND_INTERVAL = 1000;
+
+/** Timer used to send multiple messages to the server on press-and-hold */
+let send_timer;
+
 
 /**
  * Open a connection to the WebSocker server
@@ -57,15 +67,41 @@ function sendCommand(cmd) {
     message_id++;
 }
 
+
 /**
- * Handle a button press from the web page
- *
- * @param {String} cmd One of the CMD_* commands
- * @param {element} element DOM element of the button that was clicked
+ * Bind EventListeners to the control buttons. Enables us to have press-and-hold
+ * support for easier driving.
  */
-function buttonPress(cmd, element) {
-    console.log(`${cmd} button pressed`);
+function bindListeners() {
+    for (let btn of document.querySelectorAll('.ctl_button')) {
+	let cmd = btn.value;
+	btn.addEventListener("mousedown", function(e) { onPress(e, cmd) }, false);
+	btn.addEventListener("mouseup", onRelease, false);
+	btn.addEventListener("mouseleave", onRelease, false);
+	btn.addEventListener("touchstart", function(e) { onPress(e, cmd) }, false);
+	btn.addEventListener("touchend", onRelease, false);
+    }
+}
+
+/**
+ * Handle a button press from the web page. Continues to fire events
+ * as long as the button is pressed. Call onRelease() to stop the events. 
+ *
+ * @param {Event} evt
+ * @param {String} cmd One of the CMD_* commands
+ */
+function onPress(evt, cmd) {
+    evt.preventDefault();  // Cancel propagation. Ensures we don't get double events (touch+mouse) on mobile
     sendCommand(cmd);
+    clearInterval(send_timer);  // Just in case...
+    send_timer = setInterval(sendCommand, SEND_INTERVAL, cmd);
+}
+
+/**
+ * Call when a button is released to stop the events being fired by the button.
+ */
+function onRelease() {
+    clearInterval(send_timer);
 }
 
 /**
@@ -95,7 +131,7 @@ function closeCallback(evt) {
     enableElement('btn_connect');
     
     if (evt.code != 1000) {  // 1000 is 'Normal closure'. See WebSockets API: CloseEvent
-	writeStatus('The server closed the connection', MSG_TIMEOUT);
+	writeStatus('The server closed the connection', STATUS_MSG_TIMEOUT);
     }
 }
 
@@ -113,7 +149,7 @@ function errorCallback(evt) {
     disableElement('btn_disconnect');
     enableElement('btn_connect');
 
-    writeStatus('Error communicating with rover', MSG_TIMEOUT);
+    writeStatus('Error communicating with rover', STATUS_MSG_TIMEOUT);
 }
 
 /**
@@ -127,7 +163,7 @@ function messageCallback(evt) {
 	switch (evt.data) {
 	case protocol.CMD_BEGIN_CONTROL:
 	    enableElement('ctl_buttons');
-	    writeStatus('Time to drive!', MSG_TIMEOUT);
+	    writeStatus('Time to drive!', STATUS_MSG_TIMEOUT);
 	    break;
 	default:
 	    console.log('received unknown command from server', evt.data);

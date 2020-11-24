@@ -8,7 +8,7 @@ const WebSocketServer = require('websocket').server;
 const LISTEN_PORT = 8080;
 
 const protocol = require('./protocol.js');
-let Queue = require('./queue.js');
+let Broker = require('./broker.js');
 let Rover = require('./rover.js');
 
 /** Time (in ms) to run while turning */
@@ -35,13 +35,8 @@ const VALID_URLS = {
 /** List of valid origins for the WebSocket */
 let valid_origins = [];
 
-/** Queue of clients that want control of the rover */
-let control_queue = new Queue(function (next_client) {
-    next_client.send(protocol.CMD_BEGIN_CONTROL);
-});
-
-/** Rover instance */
-let rover = null;
+/** Broker to control access to the rover */
+let broker = null;
 
 /**
  * Read a file from disk, put it into the response, and send the response.
@@ -104,15 +99,13 @@ function createHttpServer() {
 }
 
 /**
- * Handle a command from the client. Assumes that the command has already
- * been validated as OK to process.
+ * commandProcessor callback from the broker to handle a command to be sent
+ * to the rover.
  *
- * @param {WebSocketConnection} conn Connection that provided the command
+ * @param {Rover} rover Rover to send a command to (the 'resource' managed by the Broker)
  * @param {String} cmd One of the Protocol.CMD_* commands from the client.
- *     Does not handle CMD_REQUEST_CONTROL, which can be sent by any client
- *     (not just a valid client) and therefore should be processed separately.
  */
-function processCommand(conn, cmd) {
+function processRoverCommand(rover, cmd) {
     // Validate + execute command
     let duration = 0;
     switch (cmd) {
@@ -123,19 +116,10 @@ function processCommand(conn, cmd) {
     case protocol.CMD_BACK:
 	duration = (duration === 0) ? DUR_MOVE : duration;
 	console.log('executing command:', cmd, duration);
-	try {
-	    rover.executeCommand(cmd, duration);
-	} catch (e) {
-	    console.log(e);
-	}
-	break;
-    case protocol.CMD_CEDE_CONTROL:
-	// Give up control and notify the next in line
-	console.log('Received cmd:', cmd);
-	control_queue.remove(conn);
+	rover.executeCommand(cmd, duration);
 	break;
     default:
-	console.log('Unknown command' , cmd);
+	console.log('Unknown command', cmd);
     }
 }
 
@@ -222,29 +206,15 @@ function onMessage(msg) {
 	return;
     }
     console.log('received message:', msg.utf8Data);
-    let msg_data = JSON.parse(msg.utf8Data);
-    let cmd = msg_data.command;
-    if (cmd === null) {
-	console.log('malformed command:', cmd);
-	return;
-    }
-    switch (cmd) {
-    case protocol.CMD_REQUEST_CONTROL:
-	// Get in line to control the rover, and take control if we're first
-	control_queue.enqueue(this);
-	break;
-    case protocol.CMD_CEDE_CONTROL:
-	// Give up control and notify the next in line
-	control_queue.remove(this);
-	break;
-    default:
-	// Only take input from the currently-active client
-	let active_conn = control_queue.peek();
-	if (active_conn !== this) {
-	    console.log('Ignoring message not from active client');
-	    return;
-	}
-	processCommand(this, cmd);
+    const msg_data = JSON.parse(msg.utf8Data);
+    const cmd = msg_data.command;
+    const conn = this; // Waste a few bytes of memory to make the code more clear
+    if (cmd === protocol.CMD_REQUEST_CONTROL) {
+	broker.register(conn);
+    } else if (cmd === protocol.CMD_CEDE_CONTROL) {
+	broker.unregister(conn);
+    } else {
+	broker.passCommand(cmd, conn);
     }
 }
 
@@ -260,7 +230,7 @@ function onMessage(msg) {
 function onClose(reason, description) {
     console.log('closing connection to', this.remoteAddress, reason, description);
     // Give up control and notify the next in line
-    control_queue.remove(this);
+    broker.unregister(this);
 }
 
 /**
@@ -268,7 +238,10 @@ function onClose(reason, description) {
  */
 let main = function() {
     readEnv();
-    rover =  new Rover(roverCallback);
+    let notifyCallback = function (next_client) { // next_client is a websocket connection
+	next_client.send(protocol.CMD_BEGIN_CONTROL);
+    };
+    broker = new Broker(new Rover(roverCallback), processRoverCommand, notifyCallback);
     const server = createHttpServer();
     createWsServer(server);
 }

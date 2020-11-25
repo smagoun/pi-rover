@@ -84,6 +84,41 @@ function bindListeners() {
 }
 
 /**
+ * Sends arrow key events as commands to the rover.
+ *
+ * @param {Event} evt
+ */
+function keyPressListener(evt) {
+    let cmd = undefined;
+    switch (evt.key) {
+    case 'ArrowDown':
+	cmd = 'back';
+	break;
+    case 'ArrowUp':
+	cmd = 'forward';
+	break;
+    case 'ArrowLeft':
+	cmd = 'left';
+	break;
+    case 'ArrowRight':
+	cmd = 'right';
+	break;
+    default:
+	break;
+    }
+    if (cmd !== undefined) {
+	onPress(evt, cmd);
+    }
+}
+
+/**
+ * Stops the key-repeat timer for sending events to the rover
+ */
+function keyReleaseListener(evt) {
+    onRelease(evt);
+}
+
+/**
  * Handle a button press from the web page. Continues to fire events
  * as long as the button is pressed. Call onRelease() to stop the events. 
  *
@@ -129,6 +164,9 @@ function closeCallback(evt) {
     disableElement('ctl_buttons');
     disableElement('btn_disconnect');
     enableElement('btn_connect');
+
+    window.removeEventListener("keydown", keyPressListener);
+    window.removeEventListener("keyup", keyReleaseListener);
     
     if (evt.code != 1000) {  // 1000 is 'Normal closure'. See WebSockets API: CloseEvent
 	writeStatus('The server closed the connection', STATUS_MSG_TIMEOUT);
@@ -149,6 +187,9 @@ function errorCallback(evt) {
     disableElement('btn_disconnect');
     enableElement('btn_connect');
 
+    window.removeEventListener("keydown", keyPressListener);
+    window.removeEventListener("keyup", keyReleaseListener);
+
     writeStatus('Error communicating with rover', STATUS_MSG_TIMEOUT);
 }
 
@@ -163,6 +204,8 @@ function messageCallback(evt) {
 	switch (evt.data) {
 	case protocol.CMD_BEGIN_CONTROL:
 	    enableElement('ctl_buttons');
+	    window.addEventListener("keydown", keyPressListener, false);
+	    window.addEventListener("keyup", keyReleaseListener, false);
 	    writeStatus('Time to drive!', STATUS_MSG_TIMEOUT);
 	    break;
 	default:

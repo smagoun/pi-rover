@@ -10,10 +10,10 @@ let message_id = 0;
 const STATUS_MSG_TIMEOUT = 3000;
 
 /**
- * Time in ms between messages we send to the server. Should be coordinated with the
- *  DUR_* variables in index.js to avoid spamming the rover with commands.
+ * Time in ms between messages we send to the server. Should be a little longer than the
+ * longest DUR_* variables in index.js to avoid spamming the rover with commands.
  */
-const SEND_INTERVAL = 1000;
+const SEND_INTERVAL = 1100;
 
 /** Timer used to send multiple messages to the server on press-and-hold */
 let send_timer;

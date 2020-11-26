@@ -118,3 +118,5 @@ dist
 # emacs
 *~
 
+# MacOS
+.DS_Store

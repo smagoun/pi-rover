@@ -147,5 +147,10 @@ The Pi Zero at idle doesn't draw much power, and the battery bank shuts it off. 
 ### Testing
 To run Jest tests: `npm run test`
 
+## Controlling the Rover
+1. Launch the server
+1. Turn on the rover
+1. In a browser, navigate to the landing page, e.g. [http://192.168.1.123:8080/](http://192.168.1.123:8080/). 'Request control', and drive!
+
 ## License
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.

@@ -1,6 +1,8 @@
 # pi-rover
 This project provides a web interface to control a Snap Circuits® RC Snap Rover®, implemented with Node.js on a Raspberry Pi Zero W.
 
+![Pi Rover image](doc/pi-rover.jpeg)
+
 ## Hardware:
 * Snap Circuits® [RC Snap Rover®](https://shop.elenco.com/consumers/rc-snap-rover.html)
   * **Note:** the 'Deluxe' Snap Rover does not use the same parts and will not work with this guide

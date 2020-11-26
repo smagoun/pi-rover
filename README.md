@@ -71,7 +71,8 @@ The circuit is a simple one that replaces the radio receiver IC with the Pi:
 1. The [rover manual](https://www.elenco.com/wp-content/uploads/2011/03/SCROV-10_REV-F.pdf) includes a number of circuits. Start with #1 (the 
 "Night Rover") and rip out everything to the left of column 6. This leaves in place the motor control IC, the (4) 1kΩ resistors
 on the inputs to the motor control IC, and the slide switch.
-1. Use the Snap-to-Pin connector to connect 4 of the Raspberry Pi's GPIOs to the resistors on the inputs of the motor control IC. I arbitrarily
+1. Install the female hammer headers on the Pi.
+1. Use the Snap-to-Pin connectors to connect 4 of the Raspberry Pi's GPIOs to the resistors on the inputs of the motor control IC. I arbitrarily
 chose pins 11/12/13/15, which correspond to GPIOs 17/18/27/22.
 1. Use one more Snap-to-Pin connector to connect a ground pin from the Pi to the ground on the rover. Though we have 2 separate power supplies
 (the rover at 9V and the Pi at 5V), the two sides are electrically connected and we need a common ground for the circuit to work.

@@ -31,10 +31,9 @@ class Rover {
     constructor(errorCallback) {
 	gpio.setMode(PIN_MODE);
 	for (const pin of PINS) {
-	    // This can sometimes thrown an 'EACCES: permission denied' error when opening
-	    // one of the gpios in sysfs. Not clear why that is happening. A timeout between
-	    // calls doesn't seem to help.
-	    // TODO: Retry on error
+	    // Due to a bug in rpi-gpio, this can sometimes thrown an 'EACCES: permission denied' error.
+	    // Bug: https://github.com/JamesBarwell/rpi-gpio.js/issues/111
+	    // Patch to rpi-gpio: https://github.com/JamesBarwell/rpi-gpio.js/pull/112/files
 	    gpio.setup(pin, gpio.DIR_OUT, errorCallback);
 	}
 	console.log('Rover connected');

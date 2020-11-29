@@ -132,9 +132,10 @@ server and request control of the rover. The server maintains a queue of clients
 to have control. The server sends a 'begin' message to the client, at which point it will accept driving commands from the client.
 
 To install:
+1. Install git: `sudo apt-get install git`
 1. Checkout the pi-rover code: `git clone https://github.com/smagoun/pi-rover.git`
 1. Change to the `pi-rover` directory and install dependencies: `npm install`
-1. Run the server software: `node index.js`
+1. Configure the server to run on boot: `sudo cp pi-rover.service /etc/systemd/system/ && sudo systemctl enable pi-rover.service`
 
 Optionally set the ORIGIN environment variable to restrict the origins from which it will accept WebSocket connections:
 `ORIGIN=http://external.hostname.com:80,http://internal.hostname.local:8080 node index.js`. This is useful for running the server

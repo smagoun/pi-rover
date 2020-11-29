@@ -1,0 +1,16 @@
+[Unit]
+Description=Pi Rover control server
+Documentation=https://github.com/smagoun/pi-rover
+After=network.target
+
+[Service]
+#Environment=ORIGIN=http://external.hostname:80,http://internal.hostname:8080
+ExecStart=/home/pi/node-v14.15.1-linux-armv6l/bin/node /home/pi/pi-rover/index.js
+WorkingDirectory=/home/pi/pi-rover
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=pi
+
+[Install]
+WantedBy=multi-user.target
